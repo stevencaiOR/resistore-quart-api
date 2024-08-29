@@ -25,12 +25,6 @@ async def get_text_scroll(url, selector, num_scrolls=5, is_headless=True):
         await browser.close()
         return elements
 
-def get_text(url, selector):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    elements = [e.text for e in soup.select(selector)]
-    return elements
-
 def str_to_bool(str):
     if str is None:
         return None
@@ -135,10 +129,13 @@ async def get_resistore_product_type():
         p_names = []
         page_num = 1
         while True:
-            temp = get_text(f"{base_url}?page={page_num}", selector)
-            if not temp:
+            response = requests.get(f"{base_url}?page={page_num}")
+            soup = BeautifulSoup(response.text, 'html.parser')
+            page_texts = [e.text for e in soup.select(selector)]
+
+            if not page_texts:
                 break
-            p_names.extend(temp)
+            p_names.extend(page_texts)
             page_num += 1
 
         # Stores instances of an async function for each product name
