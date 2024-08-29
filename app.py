@@ -7,23 +7,23 @@ from playwright.async_api import async_playwright
 from re import compile
 from urllib.parse import urljoin
 
-async def get_text_scroll(url, selector, num_scrolls=5, is_headless=True):
+async def get_page_texts(url, css_selector, num_scrolls=5, is_headless=True):
     async with async_playwright() as p:
-        # Create instance of browser and page, navigate to URL
+        # Launch browser, open new page, and navigate to URL
         browser = await p.chromium.launch(headless=is_headless)
         page = await browser.new_page()
         await page.goto(url)
         
-        # Scrolls the page num_scrolls times
+        # Scrolls the page num_scrolls times to load additional content
         for _ in range(num_scrolls):
             await page.evaluate('window.scrollBy(0, window.innerHeight)')
             await page.wait_for_timeout(1000)
 
-        # Set elements to contain all texts
-        elements = await page.locator(selector).all_inner_texts()
+        # Retrieve text content from all matched elements
+        texts = await page.locator(css_selector).all_inner_texts()
         
         await browser.close()
-        return elements
+        return texts
 
 def str_to_bool(str):
     if str is None:
@@ -50,7 +50,7 @@ async def get_reddit_comments(user):
     except ValueError:
         pages = 5
 
-    elements = await get_text_scroll(url, selector, num_scrolls=pages, is_headless=False)
+    elements = await get_page_texts(url, selector, num_scrolls=pages, is_headless=False)
     return jsonify({user: {"comments": elements}})
 
 @app.route('/api/resistore/status', methods=['GET'])
@@ -75,7 +75,7 @@ async def get_resistore_home_tabs(item_tab):
     item_tab = item_tab.lower()
     url = "https://resi.store/"
     selector = f"#{item_tab}-items p.text-center a[href*='products']"
-    elements = await get_text_scroll(url, selector, num_scrolls=0)
+    elements = await get_page_texts(url, selector, num_scrolls=0)
     return jsonify({item_tab: elements})
 
 @app.route('/api/resistore/product_types', methods=['GET'])
